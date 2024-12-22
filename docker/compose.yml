@@ -1,0 +1,15 @@
+services:
+  redis:
+    image: redis:6.2.5
+    container_name: redis
+    environment:
+      - REDIS_PASSWORD=admin
+    command: [
+      "redis-server",
+      "--requirepass", "admin",
+      "--appendonly", "yes",
+      "--maxmemory", "256mb",
+      "--maxmemory-policy", "allkeys-lru"
+    ]
+    ports:
+      - "6379:6379"

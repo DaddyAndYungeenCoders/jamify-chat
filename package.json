@@ -1,0 +1,43 @@
+{
+  "name": "jamify-chat",
+  "version": "1.0.0",
+  "description": "Chat microservice for jamify application",
+  "main": "src/server.ts",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node dist/server.js",
+    "dev": "nodemon --exec ts-node src/server.ts"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/DaddyAndYungeenCoders/jamify-chat.git"
+  },
+  "keywords": [
+    "chat",
+    "microservice"
+  ],
+  "author": "DaddyAndYungeen",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/DaddyAndYungeenCoders/jamify-chat/issues"
+  },
+  "homepage": "https://github.com/DaddyAndYungeenCoders/jamify-chat#readme",
+  "dependencies": {
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.7",
+    "express": "^4.21.2",
+    "ioredis": "^5.4.2",
+    "socket.io": "^4.8.1",
+    "stompit": "^1.0.0",
+    "uuid": "^11.0.3"
+  },
+  "devDependencies": {
+    "@types/express": "^5.0.0",
+    "@types/node": "^22.10.2",
+    "@types/socket.io": "^3.0.1",
+    "@types/stompit": "^0.26.6",
+    "nodemon": "^3.1.9",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.7.2"
+  }
+}

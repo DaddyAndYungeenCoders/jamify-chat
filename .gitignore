@@ -1,0 +1,62 @@
+# Node.js dependencies
+node_modules/
+
+# Environment variables
+.env
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# OS-generated files
+.DS_Store
+Thumbs.db
+
+# IDE/Editor settings
+.vscode/
+.idea/
+*.swp
+*.swo
+*.sublime-workspace
+*.sublime-project
+
+# Debug tools
+*.log
+debug/
+coverage/
+
+# Build outputs
+dist/
+build/
+.out/
+.next/
+
+# Temporary files
+*.tmp
+*.temp
+*.pid
+*.seed
+*.pid.lock
+
+# Test files
+/coverage/
+.nyc_output/
+
+# Specific package managers
+yarn.lock
+pnpm-lock.yaml
+
+# Ignore compiled TypeScript files (if using TypeScript)
+*.tsbuildinfo
+*.d.ts
+
+# Misc
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+public/uploads/
+public/temp/

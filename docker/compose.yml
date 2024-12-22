@@ -26,7 +26,7 @@ services:
       ACTIVEMQ_DISALLOW_WEBCONSOLE: "false"
       ACTIVEMQ_USERNAME: "myuser"
       ACTIVEMQ_PASSWORD: "mypwd"
-      ACTIVEMQ_WEBADMIN_USERNAME: "myuserweb"
-      ACTIVEMQ_WEBADMIN_PASSWORD: "mypwd"
+      ACTIVEMQ_WEBADMIN_USERNAME: "admin"
+      ACTIVEMQ_WEBADMIN_PASSWORD: "admin"
 
 

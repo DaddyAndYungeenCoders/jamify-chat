@@ -16,8 +16,8 @@ export const config: Config = {
         username: process.env.ACTIVEMQ_USERNAME || 'admin',
         password: process.env.ACTIVEMQ_PASSWORD || 'admin',
         queues: {
-            incoming: 'chat.incoming',
-            outgoing: 'chat.outgoing'
+            incoming: process.env.QUEUE_INCOMING || 'jamify.app.save-and-repub',
+            outgoing: process.env.QUEUE_OUTGOING || 'jamify.chat.send-message'
         }
     }
 };

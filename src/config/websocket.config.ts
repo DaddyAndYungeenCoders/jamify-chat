@@ -19,7 +19,7 @@ export class WebSocketManager {
     }
 
     public handleConnection(socket: Socket): void {
-        logger.info('New client connected:', socket.id);
+        logger.info(`New client connected: ${socket.id}`);
 
         socket.on('register', async (userId: string) => {
             try {
@@ -27,7 +27,7 @@ export class WebSocketManager {
                 await this.handleUserRooms(socket, userId);
                 logger.info(`User ${userId} registered with socket ${socket.id}`);
             } catch (error) {
-                logger.error('Registration error:', error);
+                logger.error(`Registration error: ${error}`);
             }
         });
 
@@ -39,14 +39,14 @@ export class WebSocketManager {
                     logger.info(`User ${userId} disconnected (socket: ${socket.id})`);
                 }
             } catch (error) {
-                logger.error('Disconnect error:', error);
+                logger.error(`Disconnect error: ${error}`);
             }
         });
     }
 
     public async broadcastToRoom(roomId: string, event: string, data: any): Promise<void> {
+        logger.info(`Broadcasting to room ${roomId}: ${data}`);
         this.io.to(roomId).emit(event, data);
-        logger.info(`Broadcasted to room ${roomId}:`, data);
     }
 
     private async handleUserRooms(socket: Socket, userId: string): Promise<void> {
@@ -56,7 +56,7 @@ export class WebSocketManager {
                 socket.join(roomId);
             }
         } catch (error) {
-            logger.error('Error joining user rooms:', error);
+            logger.error(`Error joining user rooms: ${error}`);
         }
     }
 

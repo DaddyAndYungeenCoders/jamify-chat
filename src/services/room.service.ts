@@ -1,30 +1,52 @@
 import {RedisService} from "./redis.service";
 import {Room} from "../models/room.model";
-import { RoomType } from "../models/enums/room-type.enum";
+import {RoomType} from "../models/enums/room-type.enum";
+import {v4 as uuidv4} from 'uuid';
+import {RoomPrefix} from "../models/enums/room-prefix.enum";
 
 export class RoomService {
     redisService: RedisService;
 
-    constructor(redisService: RedisService) {
+    static instance: RoomService;
+
+    private constructor(redisService: RedisService) {
         this.redisService = redisService;
     }
 
-    async createRoom(type: RoomType, metadata: {} | undefined) {
-        const room = new Room(this.generateRoomId(type), type, metadata);
-        // await this.saveRoom(room);
+
+    static getInstance(redisService: RedisService): RoomService {
+        if (!RoomService.instance) {
+            RoomService.instance = new RoomService(redisService);
+        }
+        return RoomService.instance
+    }
+
+    private async createRoom(type: RoomType, roomId: string, metadata?: {}): Promise<Room> {
+        const room = new Room(roomId, type, metadata);
+        await this.redisService.saveRoom(room);
         return room;
     }
 
-    // async saveRoom(room: Room) {
-    //     // Implementation to save the room
-    //     await this.roomService.saveRoom(room);
-    // }
+    async createPrivateRoom(user1Id: string, user2Id: string, metadata?: {}): Promise<Room> {
+        const roomId = this.generatePrivateRoomId(user1Id, user2Id);
+        return this.createRoom(RoomType.PRIVATE, roomId, metadata);
+    }
 
-    async joinRoom(roomId: string, userId: string) {
+    async createEventRoom(eventId: string, metadata?: {}): Promise<Room> {
+        const roomId = `${RoomPrefix.EVENT}${eventId}`;
+        return this.createRoom(RoomType.EVENT, roomId, metadata);
+    }
+
+    async createJamRoom(jamId: string, metadata?: {}): Promise<Room> {
+        const roomId = `${RoomPrefix.JAM}${jamId}`;
+        return this.createRoom(RoomType.JAM, roomId, metadata);
+    }
+
+    async addUserToRoom(roomId: string, userId: string) {
         await this.redisService.addUserToRoom(roomId, userId);
     }
 
-    async leaveRoom(roomId: string, userId: string) {
+    async removeUserFromRoom(roomId: string, userId: string) {
         await this.redisService.removeUserFromRoom(roomId, userId);
     }
 
@@ -36,7 +58,11 @@ export class RoomService {
         return await this.redisService.getUserRooms(userId);
     }
 
-    generateRoomId(type: RoomType) {
-        return `${type}-room_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
+    generatePrivateRoomId(user1Id: string, user2Id: string) {
+        return `${RoomPrefix.PRIVATE}${[user1Id, user2Id].sort().join('_')}`;
+    }
+
+    isRoomExists(roomId: string) {
+        return this.redisService.isRoomExists(roomId);
     }
 }

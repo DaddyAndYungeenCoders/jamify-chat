@@ -1,10 +1,13 @@
-import { connect, Client } from 'stompit';
-import { Config } from "../models/interfaces/config.interface";
-import { WebSocketManager } from "../config/websocket.config";
-import { ConnectOptions } from "../models/interfaces/connect-options.interface";
-import { ChatMessage } from "../models/interfaces/chat-message.interface";
+import {Client, connect} from 'stompit';
+import {Config} from "../models/interfaces/config.interface";
+import {WebSocketManager} from "../config/websocket.config";
+import {ConnectOptions} from "../models/interfaces/connect-options.interface";
+import {ChatMessage} from "../models/interfaces/chat-message.interface";
 import logger from "../config/logger";
 
+/**
+ * Service for managing the connection to ActiveMQ and handling message publishing and subscribing.
+ */
 export class QueueService {
     private publishClient: Client | null = null;
     private subscribeClient: Client | null = null;
@@ -14,11 +17,22 @@ export class QueueService {
 
     private static instance: QueueService;
 
+    /**
+     * Private constructor to enforce singleton pattern.
+     * @param config - Configuration object.
+     * @param wsManager - WebSocket manager instance.
+     */
     private constructor(config: Config, wsManager: WebSocketManager) {
         this.config = config;
         this.wsManager = wsManager;
     }
 
+    /**
+     * Returns the singleton instance of QueueService.
+     * @param config - Configuration object.
+     * @param wsManager - WebSocket manager instance.
+     * @returns The singleton instance of QueueService.
+     */
     public static getInstance(config: Config, wsManager: WebSocketManager): QueueService {
         if (!QueueService.instance) {
             QueueService.instance = new QueueService(config, wsManager);
@@ -26,6 +40,12 @@ export class QueueService {
         return QueueService.instance;
     }
 
+    /**
+     * Connects to ActiveMQ with retry logic.
+     * @param retries - Number of retry attempts.
+     * @param delayMs - Delay between retries in milliseconds.
+     * @returns A promise that resolves when the connection is successful.
+     */
     public async connect(retries: number = 5, delayMs: number = 3000): Promise<void> {
         const connectOptions: ConnectOptions = {
             host: this.config.activemq.host,
@@ -57,10 +77,20 @@ export class QueueService {
         }
     }
 
+    /**
+     * Delays execution for a specified number of milliseconds.
+     * @param ms - Number of milliseconds to delay.
+     * @returns A promise that resolves after the specified delay.
+     */
     private delay(ms: number): Promise<void> {
         return new Promise(resolve => setTimeout(resolve, ms));
     }
 
+    /**
+     * Creates a client connection to ActiveMQ.
+     * @param options - Connection options.
+     * @returns A promise that resolves with the client instance.
+     */
     private createClient(options: ConnectOptions): Promise<Client> {
         return new Promise((resolve, reject) => {
             connect(options, (error: Error | null, client: Client) => {
@@ -73,12 +103,21 @@ export class QueueService {
         });
     }
 
+    /**
+     * Publishes a message to the ActiveMQ queue.
+     * @param message - The chat message to publish.
+     * @returns A promise that resolves when the message is published.
+     * @throws Error if the messaging service is unavailable or the publisher is not connected.
+     */
     public async publishMessage(message: ChatMessage): Promise<void> {
+        logger.info(`Publishing message: ${JSON.stringify(message)}`);
         if (!this.isActiveMqAvailable) {
+            logger.error('Messaging service is unavailable due to connection issues');
             throw new Error('Messaging service is unavailable due to connection issues');
         }
 
         if (!this.publishClient) {
+            logger.error('Publisher not connected');
             throw new Error('Publisher not connected');
         }
 
@@ -92,6 +131,7 @@ export class QueueService {
                 const frame = this.publishClient.send(headers);
                 frame.write(JSON.stringify(message));
                 frame.end();
+                logger.info(`Message published: ${JSON.stringify(message)}`);
                 resolve();
             } else {
                 reject(new Error('Publish client is null'));
@@ -99,8 +139,14 @@ export class QueueService {
         });
     }
 
+    /**
+     * Sets up the consumer to listen for messages from the ActiveMQ queue.
+     * @returns A promise that resolves when the consumer is set up.
+     * @throws Error if the subscriber is not connected.
+     */
     private async setupConsumer(): Promise<void> {
         if (!this.subscribeClient) {
+            logger.error('Subscriber not connected');
             throw new Error('Subscriber not connected');
         }
 
@@ -111,13 +157,16 @@ export class QueueService {
 
         this.subscribeClient.subscribe(subscribeHeaders, (error: Error | null, message) => {
             if (error) {
-                logger.error('Subscribe error:', error);
+                logger.error(`Subscribe error: ${error}`);
                 return;
             }
 
             message.readString('utf-8', (error: Error | null, body?: string) => {
+                if (body) {
+                    logger.info(`Received message: ${JSON.parse(body) as ChatMessage}`);
+                }
                 if (error || !body) {
-                    logger.error('Read message error:', error);
+                    logger.error(`Read message error: ${error}`);
                     if (this.subscribeClient) {
                         this.subscribeClient.nack(message);
                     }
@@ -131,7 +180,7 @@ export class QueueService {
                         this.subscribeClient.ack(message);
                     }
                 } catch (error) {
-                    logger.error('Process message error:', error);
+                    logger.error(`Process message error: ${error}`);
                     if (this.subscribeClient) {
                         this.subscribeClient.nack(message);
                     }
@@ -140,19 +189,29 @@ export class QueueService {
         });
     }
 
+    /**
+     * Handles the processed message by broadcasting it to the appropriate WebSocket room.
+     * @param message - The chat message to process.
+     * @returns A promise that resolves when the message is broadcasted.
+     * @throws Error if broadcasting fails.
+     */
     private async handleProcessedMessage(message: ChatMessage): Promise<void> {
+        logger.info(`Processing message: ${JSON.stringify(message)}`);
         try {
-            if (this.wsManager && typeof this.wsManager.broadcastToRoom === 'function') {
+            if (message.roomId) {
                 await this.wsManager.broadcastToRoom(message.roomId, 'new-message', message);
-            } else {
-                throw new Error('broadcastToRoom method not found in WebSocketManager');
             }
         } catch (error) {
-            logger.error('Error broadcasting message:', error);
+            logger.error(`Error broadcasting message: ${error}`);
             throw error;
         }
     }
 
+    /**
+     * Disconnects from ActiveMQ.
+     * @returns A promise that resolves when the disconnection is complete.
+     * @throws Error if disconnection fails.
+     */
     public async disconnect(): Promise<void> {
         try {
             if (this.publishClient) {

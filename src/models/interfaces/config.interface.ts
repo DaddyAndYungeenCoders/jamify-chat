@@ -1,5 +1,6 @@
 export interface Config {
     port: number;
+    host: string;
     serverId: string;
     redis: {
         host: string;

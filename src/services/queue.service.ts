@@ -3,23 +3,22 @@ import { Config } from "../models/interfaces/config.interface";
 import { WebSocketManager } from "../config/websocket.config";
 import { ConnectOptions } from "../models/interfaces/connect-options.interface";
 import { ChatMessage } from "../models/interfaces/chat-message.interface";
+import logger from "../config/logger";
 
 export class QueueService {
     private publishClient: Client | null = null;
     private subscribeClient: Client | null = null;
     private readonly config: Config;
     private readonly wsManager: WebSocketManager;
+    private isActiveMqAvailable: boolean = false; // Connection status flag
 
-    // Singleton instance
     private static instance: QueueService;
 
-    // Private constructor to prevent direct instantiation
     private constructor(config: Config, wsManager: WebSocketManager) {
         this.config = config;
         this.wsManager = wsManager;
     }
 
-    // Public method to get the singleton instance
     public static getInstance(config: Config, wsManager: WebSocketManager): QueueService {
         if (!QueueService.instance) {
             QueueService.instance = new QueueService(config, wsManager);
@@ -27,7 +26,7 @@ export class QueueService {
         return QueueService.instance;
     }
 
-    public async connect(): Promise<void> {
+    public async connect(retries: number = 5, delayMs: number = 3000): Promise<void> {
         const connectOptions: ConnectOptions = {
             host: this.config.activemq.host,
             port: this.config.activemq.port,
@@ -38,15 +37,28 @@ export class QueueService {
             }
         };
 
-        try {
-            this.publishClient = await this.createClient(connectOptions);
-            this.subscribeClient = await this.createClient(connectOptions);
-            await this.setupConsumer();
-            console.log('Successfully connected to ActiveMQ');
-        } catch (error) {
-            console.error('Failed to connect to ActiveMQ:', error);
-            throw error;
+        for (let attempt = 1; attempt <= retries; attempt++) {
+            try {
+                this.publishClient = await this.createClient(connectOptions);
+                this.subscribeClient = await this.createClient(connectOptions);
+                await this.setupConsumer();
+                this.isActiveMqAvailable = true;
+                logger.info('Successfully connected to ActiveMQ');
+                return;
+            } catch (error) {
+                logger.error(`Failed to connect to ActiveMQ (attempt ${attempt} of ${retries}):`, error);
+                if (attempt < retries) {
+                    await this.delay(delayMs);
+                } else {
+                    this.isActiveMqAvailable = false;
+                    throw error;
+                }
+            }
         }
+    }
+
+    private delay(ms: number): Promise<void> {
+        return new Promise(resolve => setTimeout(resolve, ms));
     }
 
     private createClient(options: ConnectOptions): Promise<Client> {
@@ -62,6 +74,10 @@ export class QueueService {
     }
 
     public async publishMessage(message: ChatMessage): Promise<void> {
+        if (!this.isActiveMqAvailable) {
+            throw new Error('Messaging service is unavailable due to connection issues');
+        }
+
         if (!this.publishClient) {
             throw new Error('Publisher not connected');
         }
@@ -95,13 +111,13 @@ export class QueueService {
 
         this.subscribeClient.subscribe(subscribeHeaders, (error: Error | null, message) => {
             if (error) {
-                console.error('Subscribe error:', error);
+                logger.error('Subscribe error:', error);
                 return;
             }
 
             message.readString('utf-8', (error: Error | null, body?: string) => {
                 if (error || !body) {
-                    console.error('Read message error:', error);
+                    logger.error('Read message error:', error);
                     if (this.subscribeClient) {
                         this.subscribeClient.nack(message);
                     }
@@ -115,7 +131,7 @@ export class QueueService {
                         this.subscribeClient.ack(message);
                     }
                 } catch (error) {
-                    console.error('Process message error:', error);
+                    logger.error('Process message error:', error);
                     if (this.subscribeClient) {
                         this.subscribeClient.nack(message);
                     }
@@ -132,7 +148,7 @@ export class QueueService {
                 throw new Error('broadcastToRoom method not found in WebSocketManager');
             }
         } catch (error) {
-            console.error('Error broadcasting message:', error);
+            logger.error('Error broadcasting message:', error);
             throw error;
         }
     }
@@ -145,8 +161,9 @@ export class QueueService {
             if (this.subscribeClient) {
                 this.subscribeClient.disconnect();
             }
+            this.isActiveMqAvailable = false; // Set connection status to false
         } catch (error) {
-            console.error('Error disconnecting from ActiveMQ:', error);
+            logger.error('Error disconnecting from ActiveMQ:', error);
             throw error;
         }
     }

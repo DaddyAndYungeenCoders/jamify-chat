@@ -1,6 +1,7 @@
 import Redis from 'ioredis';
 import {RedisServiceConfig} from "../models/interfaces/redis-service-config.interface";
 import {UserConnection} from "../models/interfaces/user-connection.interface";
+import logger from "../config/logger";
 
 export class RedisService {
     private redis: Redis;
@@ -27,7 +28,7 @@ export class RedisService {
                 this.redis.set(`socket:${socketId}:user`, userId)
             ]);
         } catch (error) {
-            console.error('Error adding user connection:', error);
+            logger.error('Error adding user connection:', error);
             throw new Error('Failed to add user connection');
         }
     }
@@ -45,7 +46,7 @@ export class RedisService {
                 ]);
             }
         } catch (error) {
-            console.error('Error removing user connection:', error);
+            logger.error('Error removing user connection:', error);
             throw new Error('Failed to remove user connection');
         }
     }
@@ -59,7 +60,7 @@ export class RedisService {
 
             return connection || null;
         } catch (error) {
-            console.error('Error getting user connection:', error);
+            logger.error('Error getting user connection:', error);
             throw new Error('Failed to get user connection');
         }
     }
@@ -68,7 +69,7 @@ export class RedisService {
         try {
             return await this.redis.get(`socket:${socketId}:user`);
         } catch (error) {
-            console.error('Error getting userId from socket:', error);
+            logger.error('Error getting userId from socket:', error);
             throw new Error('Failed to get userId from socket');
         }
     }
@@ -78,7 +79,7 @@ export class RedisService {
             const connections = await this.redis.smembers(`user:${userId}:connections`);
             return connections.map(conn => JSON.parse(conn) as UserConnection);
         } catch (error) {
-            console.error('Error getting all user connections:', error);
+            logger.error('Error getting all user connections:', error);
             throw new Error('Failed to get all user connections');
         }
     }
@@ -87,7 +88,7 @@ export class RedisService {
         try {
             return await this.redis.smembers(`user:${userId}:rooms`);
         } catch (error) {
-            console.error('Error getting user rooms:', error);
+            logger.error('Error getting user rooms:', error);
             throw new Error('Failed to get user rooms');
         }
     }
@@ -96,7 +97,7 @@ export class RedisService {
         try {
             await this.redis.sadd(`user:${userId}:rooms`, roomId);
         } catch (error) {
-            console.error('Error adding user room:', error);
+            logger.error('Error adding user room:', error);
             throw new Error('Failed to add user room');
         }
     }
@@ -105,7 +106,7 @@ export class RedisService {
         try {
             await this.redis.srem(`user:${userId}:rooms`, roomId);
         } catch (error) {
-            console.error('Error removing user room:', error);
+            logger.error('Error removing user room:', error);
             throw new Error('Failed to remove user room');
         }
     }
@@ -114,7 +115,7 @@ export class RedisService {
         try {
             return await this.redis.smembers(`room:${roomId}:users`);
         } catch (error) {
-            console.error('Error getting room users:', error);
+            logger.error('Error getting room users:', error);
             throw new Error('Failed to get room users');
         }
     }

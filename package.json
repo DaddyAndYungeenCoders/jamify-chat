@@ -29,7 +29,8 @@
     "ioredis": "^5.4.2",
     "socket.io": "^4.8.1",
     "stompit": "^1.0.0",
-    "uuid": "^11.0.3"
+    "uuid": "^11.0.3",
+    "winston": "^3.17.0"
   },
   "devDependencies": {
     "@types/express": "^5.0.0",

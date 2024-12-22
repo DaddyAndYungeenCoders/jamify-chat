@@ -1,6 +1,6 @@
-import express, { Application } from 'express';
-import { Server as SocketServer } from 'socket.io';
-import { createServer, Server as HttpServer } from 'http';
+import express, {Application} from 'express';
+import {Server as SocketServer} from 'socket.io';
+import {createServer, Server as HttpServer} from 'http';
 import {WebSocketManager} from "./config/websocket.config";
 import {RedisService} from "./services/redis.service";
 import {messageRoutes} from "./routes/message.route";
@@ -8,6 +8,7 @@ import {errorHandler} from "./middleware/error-handler";
 import {Config} from "./models/interfaces/config.interface";
 import {QueueService} from "./services/queue.service";
 import {RoomService} from "./services/room.service";
+import logger from "./config/logger";
 
 // Application configuration and initialization of services
 export class App {
@@ -49,16 +50,16 @@ export class App {
     private async initializeServices(): Promise<void> {
         try {
             await this.queueService.connect();
-            console.log('Queue service initialized successfully');
+            logger.info('Queue service initialized successfully');
         } catch (error) {
-            console.error('Failed to initialize queue service:', error);
+            logger.error('Failed to initialize queue service:', error);
             throw error;
         }
     }
 
     private initializeMiddlewares(): void {
         this.app.use(express.json());
-        this.app.use(express.urlencoded({ extended: true }));
+        this.app.use(express.urlencoded({extended: true}));
     }
 
     private initializeRoutes(): void {

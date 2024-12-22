@@ -13,3 +13,20 @@ services:
     ]
     ports:
       - "6379:6379"
+
+# ONLY FOR DEVELOPMENT
+  activemq:
+    image: symptoma/activemq:5.18.3
+    container_name: activemq
+    ports:
+      - "61616:61616"
+      - "61613:61613"
+      - "8161:8161"
+    environment:
+      ACTIVEMQ_DISALLOW_WEBCONSOLE: "false"
+      ACTIVEMQ_USERNAME: "myuser"
+      ACTIVEMQ_PASSWORD: "mypwd"
+      ACTIVEMQ_WEBADMIN_USERNAME: "myuserweb"
+      ACTIVEMQ_WEBADMIN_PASSWORD: "mypwd"
+
+

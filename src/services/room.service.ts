@@ -1,7 +1,6 @@
 import {RedisService} from "./redis.service";
 import {Room} from "../models/room.model";
 import {RoomType} from "../models/enums/room-type.enum";
-import {v4 as uuidv4} from 'uuid';
 import {RoomPrefix} from "../models/enums/room-prefix.enum";
 
 export class RoomService {
@@ -12,7 +11,6 @@ export class RoomService {
     private constructor(redisService: RedisService) {
         this.redisService = redisService;
     }
-
 
     static getInstance(redisService: RedisService): RoomService {
         if (!RoomService.instance) {

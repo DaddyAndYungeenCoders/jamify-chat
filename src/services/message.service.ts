@@ -5,7 +5,6 @@ import {RoomService} from "./room.service";
 import {Config} from "../models/interfaces/config.interface";
 import {WebSocketManager} from "../config/websocket.config";
 import logger from "../config/logger";
-import {RoomPrefix} from "../models/enums/room-prefix.enum";
 
 interface MessageValidationResult {
     isValid: boolean;
@@ -123,9 +122,10 @@ export class MessageService {
                 await this.roomService.addUserToRoom(message.senderId, roomId);
                 await this.roomService.addUserToRoom(message.destId, roomId);
             }
+            // adds the room ID to the message so it will bbe broadcasted to the correct room once the message is saved and read from the queue
+            message.roomId = roomId;
             return;
         }
-        // || await this.roomService.isRoomExists(message.roomId))
     }
 
     /**

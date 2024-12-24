@@ -199,7 +199,7 @@ export class QueueService {
         logger.info(`Processing message: ${JSON.stringify(message)}`);
         try {
             if (message.roomId) {
-                await this.wsManager.broadcastToRoom(message.roomId, 'new-message', message);
+                await this.wsManager.broadcastToRoom(message.roomId, this.config.ws.messageChannel, message);
             }
         } catch (error) {
             logger.error(`Error broadcasting message: ${error}`);

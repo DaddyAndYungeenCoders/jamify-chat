@@ -17,4 +17,7 @@ export interface Config {
             outgoing: string;
         };
     };
+    ws: {
+        messageChannel: string;
+    };
 }

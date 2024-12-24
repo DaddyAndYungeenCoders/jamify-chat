@@ -19,5 +19,8 @@ export const config: Config = {
             incoming: process.env.QUEUE_INCOMING || 'jamify.app.save-and-repub',
             outgoing: process.env.QUEUE_OUTGOING || 'jamify.chat.send-message'
         }
+    },
+    ws: {
+        messageChannel: 'new-message',
     }
 };

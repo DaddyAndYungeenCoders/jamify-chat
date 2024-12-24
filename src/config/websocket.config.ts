@@ -23,7 +23,9 @@ export class WebSocketManager {
 
         socket.on('register', async (userId: string) => {
             try {
+                // Register the user connection in Redis
                 await this.redisService.addUserConnection(userId, socket.id, this.serverId);
+                // Join the user's rooms
                 await this.handleUserRooms(socket, userId);
                 logger.info(`User ${userId} registered with socket ${socket.id}`);
             } catch (error) {
@@ -45,7 +47,7 @@ export class WebSocketManager {
     }
 
     public async broadcastToRoom(roomId: string, event: string, data: any): Promise<void> {
-        logger.info(`Broadcasting to room ${roomId}: ${data}`);
+        logger.info(`Broadcasting to room ${roomId}: ${data.toString()}`);
         this.io.to(roomId).emit(event, data);
     }
 

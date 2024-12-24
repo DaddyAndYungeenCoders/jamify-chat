@@ -10,6 +10,7 @@ import {QueueService} from "./services/queue.service";
 import {RoomService} from "./services/room.service";
 import logger from "./config/logger";
 import {roomRoutes} from "./routes/room.route";
+import cors from 'cors';
 
 /**
  * Main application class for initializing and configuring the Express server,
@@ -22,7 +23,7 @@ export class App {
     private readonly wsManager: WebSocketManager;
     private queueService: QueueService;
     private readonly redisService: RedisService;
-    private roomService: RoomService;
+    private readonly roomService: RoomService;
 
     /**
      * Constructs a new App instance.
@@ -31,7 +32,13 @@ export class App {
     constructor(config: Config) {
         this.app = express();
         this.server = createServer(this.app);
-        this.io = new SocketServer(this.server);
+        this.io = new SocketServer(this.server, {
+            cors: {
+                origin: 'http://localhost:5173',
+                methods: ['GET', 'POST', 'PUT', 'DELETE'],
+                allowedHeaders: ['Content-Type', 'Authorization'],
+            }
+        });
 
         this.redisService = RedisService.getInstance(config.redis);
 
@@ -71,6 +78,11 @@ export class App {
     private initializeMiddlewares(): void {
         this.app.use(express.json());
         this.app.use(express.urlencoded({extended: true}));
+        this.app.use(cors({
+            origin: 'http://localhost:5173',
+            methods: ['GET', 'POST', 'PUT', 'DELETE'],
+            allowedHeaders: ['Content-Type', 'Authorization', 'Upgrade'],
+        }));
     }
 
     /**

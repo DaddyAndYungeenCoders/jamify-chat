@@ -1,9 +1,9 @@
 import {Client, connect} from 'stompit';
 import {Config} from "../models/interfaces/config.interface";
-import {WebSocketManager} from "../config/websocket.config";
 import {ConnectOptions} from "../models/interfaces/connect-options.interface";
 import {ChatMessage} from "../models/interfaces/chat-message.interface";
 import logger from "../config/logger";
+import {WebSocketService} from "./websocket.service";
 
 /**
  * Service for managing the connection to ActiveMQ and handling message publishing and subscribing.
@@ -12,7 +12,7 @@ export class QueueService {
     private publishClient: Client | null = null;
     private subscribeClient: Client | null = null;
     private readonly config: Config;
-    private readonly wsManager: WebSocketManager;
+    private readonly wsService: WebSocketService;
     private isActiveMqAvailable: boolean = false; // Connection status flag
 
     private static instance: QueueService;
@@ -20,22 +20,22 @@ export class QueueService {
     /**
      * Private constructor to enforce singleton pattern.
      * @param config - Configuration object.
-     * @param wsManager - WebSocket manager instance.
+     * @param webSocketService - WebSocket manager instance.
      */
-    private constructor(config: Config, wsManager: WebSocketManager) {
+    private constructor(config: Config, webSocketService: WebSocketService) {
         this.config = config;
-        this.wsManager = wsManager;
+        this.wsService = webSocketService;
     }
 
     /**
      * Returns the singleton instance of QueueService.
      * @param config - Configuration object.
-     * @param wsManager - WebSocket manager instance.
+     * @param webSocketService - WebSocket manager instance.
      * @returns The singleton instance of QueueService.
      */
-    public static getInstance(config: Config, wsManager: WebSocketManager): QueueService {
+    public static getInstance(config: Config, webSocketService: WebSocketService): QueueService {
         if (!QueueService.instance) {
-            QueueService.instance = new QueueService(config, wsManager);
+            QueueService.instance = new QueueService(config, webSocketService);
         }
         return QueueService.instance;
     }
@@ -199,7 +199,7 @@ export class QueueService {
         logger.info(`Processing message: ${JSON.stringify(message)}`);
         try {
             if (message.roomId) {
-                await this.wsManager.broadcastToRoom(message.roomId, this.config.ws.messageChannel, message);
+                await this.wsService.broadcastToRoom(message.roomId, this.config.ws.messageChannel, message);
             }
         } catch (error) {
             logger.error(`Error broadcasting message: ${error}`);

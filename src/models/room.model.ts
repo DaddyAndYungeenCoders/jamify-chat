@@ -1,6 +1,5 @@
 import {RoomType} from "./enums/room-type.enum";
 
-
 export class Room {
     id: string;
     type: RoomType;

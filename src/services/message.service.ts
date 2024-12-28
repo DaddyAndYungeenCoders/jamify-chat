@@ -3,7 +3,7 @@ import {ChatMessage} from "../models/interfaces/chat-message.interface";
 import {QueueService} from "./queue.service";
 import {RoomService} from "./room.service";
 import {Config} from "../models/interfaces/config.interface";
-import {WebSocketManager} from "../config/websocket.config";
+import {WebSocketService} from "./websocket.service";
 import logger from "../config/logger";
 
 interface MessageValidationResult {
@@ -23,7 +23,7 @@ export class MessageService {
      * @param wsManager - WebSocket manager instance.
      * @param roomService - Room service instance.
      */
-    private constructor(config: Config, wsManager: WebSocketManager, roomService: RoomService) {
+    private constructor(config: Config, wsManager: WebSocketService, roomService: RoomService) {
         this.queueService = QueueService.getInstance(config, wsManager);
         this.roomService = roomService;
     }
@@ -35,7 +35,7 @@ export class MessageService {
      * @param roomService - Room service instance.
      * @returns The singleton instance of MessageService.
      */
-    public static getInstance(config: Config, wsManager: WebSocketManager, roomService: RoomService): MessageService {
+    public static getInstance(config: Config, wsManager: WebSocketService, roomService: RoomService): MessageService {
         if (!MessageService.instance) {
             MessageService.instance = new MessageService(config, wsManager, roomService);
         }

@@ -1,18 +1,18 @@
 import {Server, Socket} from 'socket.io';
-import {RedisService} from "../services/redis.service";
-import logger from "./logger";
+import {RedisService} from './redis.service';
+import logger from '../config/logger';
 
-interface WebSocketManagerConfig {
+interface WebSocketServiceConfig {
     serverId: string;
     redisService: RedisService;
 }
 
-export class WebSocketManager {
+export class WebSocketService {
     private io: Server;
     private redisService: RedisService;
     private serverId: string;
 
-    constructor(io: Server, config: WebSocketManagerConfig) {
+    constructor(io: Server, config: WebSocketServiceConfig) {
         this.io = io;
         this.redisService = config.redisService;
         this.serverId = config.serverId;
@@ -23,9 +23,7 @@ export class WebSocketManager {
 
         socket.on('register', async (userId: string) => {
             try {
-                // Register the user connection in Redis
                 await this.redisService.addUserConnection(userId, socket.id, this.serverId);
-                // Join the user's rooms
                 await this.handleUserRooms(socket, userId);
                 logger.info(`User ${userId} registered with socket ${socket.id}`);
             } catch (error) {
@@ -61,5 +59,4 @@ export class WebSocketManager {
             logger.error(`Error joining user rooms: ${error}`);
         }
     }
-
 }

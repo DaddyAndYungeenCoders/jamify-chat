@@ -1,47 +1,45 @@
 import {v4 as uuidv4} from "uuid";
 import {ChatMessage} from "../models/interfaces/chat-message.interface";
 import {QueueService} from "./queue.service";
-import {RoomService} from "./room.service";
 import {Config} from "../models/interfaces/config.interface";
-import {WebSocketService} from "./websocket.service";
 import logger from "../config/logger";
+import {QueueEnum} from "../models/enums/queue.enum";
+import {WebsocketApiService} from "./websocket-api.service";
 
 interface MessageValidationResult {
     isValid: boolean;
     error?: string;
 }
 
+/**
+ * Service for handling chat messages.
+ */
 export class MessageService {
 
     static instance: MessageService;
     private queueService: QueueService;
-    private roomService: RoomService;
+    private websocketApiService: WebsocketApiService;
 
     /**
      * Private constructor to enforce singleton pattern.
      * @param config - Configuration object.
-     * @param wsManager - WebSocket manager instance.
-     * @param roomService - Room service instance.
      */
-    private constructor(config: Config, wsManager: WebSocketService, roomService: RoomService) {
-        this.queueService = QueueService.getInstance(config, wsManager);
-        this.roomService = roomService;
+    private constructor(config: Config) {
+        this.queueService = QueueService.getInstance(config);
+        this.websocketApiService = WebsocketApiService.getInstance();
     }
 
     /**
      * Returns the singleton instance of MessageService.
      * @param config - Configuration object.
-     * @param wsManager - WebSocket manager instance.
-     * @param roomService - Room service instance.
      * @returns The singleton instance of MessageService.
      */
-    public static getInstance(config: Config, wsManager: WebSocketService, roomService: RoomService): MessageService {
+    public static getInstance(config: Config): MessageService {
         if (!MessageService.instance) {
-            MessageService.instance = new MessageService(config, wsManager, roomService);
+            MessageService.instance = new MessageService(config);
         }
         return MessageService.instance;
     }
-
 
     /**
      * Sends a message to the queue after validation and room handling.
@@ -50,7 +48,7 @@ export class MessageService {
      * @throws Error if the message is invalid or room creation fails.
      */
     async sendQueueMessage(message: ChatMessage): Promise<ChatMessage> {
-        // Valider le message
+        // Validate the message
         const validationResult = this.validateMessage(message);
         if (!validationResult.isValid) {
             logger.error(`Invalid message data: ${validationResult.error}`);
@@ -60,14 +58,14 @@ export class MessageService {
         // Check if user exists
         // TODO: fetch uaa microservice ?
 
-        // Créer le message avec les données de base
+        // Create the message with base data
         const messageData = this.createBaseMessage(message);
 
-        // Gérer la création/vérification de la room si nécessaire
+        // Handle room creation/verification if necessary
         await this.handleRoomCreation(messageData);
 
-        // Publier le message
-        await this.queueService.publishMessage(messageData);
+        // Publish the message
+        await this.queueService.publishMessage(messageData, QueueEnum.SAVE_AND_REPUB);
         return messageData;
     }
 
@@ -115,16 +113,15 @@ export class MessageService {
     private async handleRoomCreation(message: ChatMessage): Promise<void> {
         // if message has no roomId and has destId, create private room if not exists
         if (!message.roomId && message.destId) {
-            // in this case, the room ID must be a combination of the sender and destination IDs
-            const roomId = this.roomService.generatePrivateRoomId(message.senderId, message.destId);
-            if (!await this.roomService.isRoomExists(roomId)) {
-                await this.roomService.createPrivateRoom(message.senderId, message.destId);
-                await this.roomService.addUserToRoom(message.senderId, roomId);
-                await this.roomService.addUserToRoom(message.destId, roomId);
+            if (!message.roomId && message.destId) {
+                try {
+                    message.roomId = await this.websocketApiService.createPrivateRoom(message.senderId, message.destId);
+                    await this.websocketApiService.addUsersToPrivateRoom(message.roomId, [message.senderId, message.destId]);
+                } catch (error) {
+                    logger.error(`Error creating private room: ${error}`);
+                    throw error;
+                }
             }
-            // adds the room ID to the message so it will bbe broadcasted to the correct room once the message is saved and read from the queue
-            message.roomId = roomId;
-            return;
         }
     }
 

@@ -63,6 +63,7 @@ Jamify Chat is a microservice handling chat for the Jamify application. It is bu
 - `npm run start`: Start the production server.
 - `npm run test`: Run the tests.
 
+### TODO
 Client needs to register by emitting a `register` event with the user's id. It will be saved in the redis database along with its socket id.
 
 Then, it can send messages by sending a POST request to `/api/messages/send` with a ChatMessage Object in the body.
@@ -79,8 +80,9 @@ export interface ChatMessage {
 }
 ```
 
-This server will post the message to the ActiveMQ queue, and the Spring microservice will read it and repost it to another queue. This server will read this queue and send the message through websocket to the right user.
+This server will post the message to the ActiveMQ queue, and the Spring microservice will read it and repost it to another queue. This server will read this queue and send the message through another queue that will be consumed by the websocket microservice.
 
+![diagram](assets/diagram.png)
 
 
 ## Contributing

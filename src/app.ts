@@ -2,24 +2,17 @@ import express, {Application} from 'express';
 import cors from 'cors';
 import {createServer, Server as HttpServer} from 'http';
 import {Server as SocketServer} from 'socket.io';
-import {WebSocketService} from './services/websocket.service';
-import {RedisService} from './services/redis.service';
 import {messageRoutes} from './routes/message.route';
 import {errorHandler} from './middleware/error-handler';
 import {Config} from './models/interfaces/config.interface';
 import {QueueService} from './services/queue.service';
-import {RoomService} from './services/room.service';
 import logger from './config/logger';
-import {roomRoutes} from './routes/room.route';
 
 export class App {
     public app: Application;
     public server: HttpServer;
     public io: SocketServer;
-    private readonly wsService: WebSocketService;
     private queueService: QueueService;
-    private readonly redisService: RedisService;
-    private readonly roomService: RoomService;
 
     constructor(config: Config) {
         this.app = express();
@@ -33,18 +26,11 @@ export class App {
             }
         });
 
-        this.redisService = RedisService.getInstance(config.redis);
-        this.roomService = RoomService.getInstance(this.redisService);
-        this.wsService = new WebSocketService(this.io, {
-            serverId: config.serverId,
-            redisService: this.redisService
-        });
-        this.queueService = QueueService.getInstance(config, this.wsService);
+        this.queueService = QueueService.getInstance(config);
 
         this.initializeServices();
         this.initializeMiddlewares();
         this.initializeRoutes();
-        this.initializeWebSocket();
         this.initializeErrorHandling();
     }
 
@@ -69,14 +55,7 @@ export class App {
     }
 
     private initializeRoutes(): void {
-        this.app.use('/api/messages', messageRoutes(this.wsService, this.roomService));
-        this.app.use('/api/rooms', roomRoutes(this.roomService));
-    }
-
-    private initializeWebSocket(): void {
-        this.io.on('connection', (socket) => {
-            this.wsService.handleConnection(socket);
-        });
+        this.app.use('/api/messages', messageRoutes());
     }
 
     private initializeErrorHandling(): void {

@@ -2,20 +2,16 @@ import {Router} from 'express';
 import {validateMessage} from "../middleware/validators";
 import {MessageService} from "../services/message.service";
 import {ChatMessage} from "../models/interfaces/chat-message.interface";
-import {WebSocketService} from "../services/websocket.service";
 import {config} from "../config/config";
-import {RoomService} from "../services/room.service";
 import logger from "../config/logger";
 
 /**
  * Defines the message routes for the application.
- * @param wsManager - The WebSocket manager instance.
- * @param roomService - The room service instance.
  * @returns The configured router.
  */
-export const messageRoutes = (wsManager: WebSocketService, roomService: RoomService) => {
+export const messageRoutes = () => {
     const router = Router();
-    const messageService = MessageService.getInstance(config, wsManager, roomService);
+    const messageService = MessageService.getInstance(config);
 
     /**
      * Route to handle posting a new message.

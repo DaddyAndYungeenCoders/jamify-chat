@@ -3,7 +3,7 @@ import {Config} from "../models/interfaces/config.interface";
 import {ConnectOptions} from "../models/interfaces/connect-options.interface";
 import {ChatMessage} from "../models/interfaces/chat-message.interface";
 import logger from "../config/logger";
-import {WebSocketService} from "./websocket.service";
+import {QueueEnum} from "../models/enums/queue.enum";
 
 /**
  * Service for managing the connection to ActiveMQ and handling message publishing and subscribing.
@@ -12,7 +12,6 @@ export class QueueService {
     private publishClient: Client | null = null;
     private subscribeClient: Client | null = null;
     private readonly config: Config;
-    private readonly wsService: WebSocketService;
     private isActiveMqAvailable: boolean = false; // Connection status flag
 
     private static instance: QueueService;
@@ -22,9 +21,8 @@ export class QueueService {
      * @param config - Configuration object.
      * @param webSocketService - WebSocket manager instance.
      */
-    private constructor(config: Config, webSocketService: WebSocketService) {
+    private constructor(config: Config) {
         this.config = config;
-        this.wsService = webSocketService;
     }
 
     /**
@@ -33,9 +31,9 @@ export class QueueService {
      * @param webSocketService - WebSocket manager instance.
      * @returns The singleton instance of QueueService.
      */
-    public static getInstance(config: Config, webSocketService: WebSocketService): QueueService {
+    public static getInstance(config: Config): QueueService {
         if (!QueueService.instance) {
-            QueueService.instance = new QueueService(config, webSocketService);
+            QueueService.instance = new QueueService(config);
         }
         return QueueService.instance;
     }
@@ -106,10 +104,11 @@ export class QueueService {
     /**
      * Publishes a message to the ActiveMQ queue.
      * @param message - The chat message to publish.
+     * @param queue
      * @returns A promise that resolves when the message is published.
      * @throws Error if the messaging service is unavailable or the publisher is not connected.
      */
-    public async publishMessage(message: ChatMessage): Promise<void> {
+    public async publishMessage(message: ChatMessage, queue: QueueEnum): Promise<void> {
         logger.info(`Publishing message: ${JSON.stringify(message)}`);
         if (!this.isActiveMqAvailable) {
             logger.error('Messaging service is unavailable due to connection issues');
@@ -123,7 +122,7 @@ export class QueueService {
 
         return new Promise((resolve, reject) => {
             const headers = {
-                destination: `/queue/${this.config.activemq.queues.incoming}`,
+                destination: `/queue/${queue}`,
                 'content-type': 'application/json'
             };
 
@@ -199,7 +198,13 @@ export class QueueService {
         logger.info(`Processing message: ${JSON.stringify(message)}`);
         try {
             if (message.roomId) {
-                await this.wsService.broadcastToRoom(message.roomId, this.config.ws.messageChannel, message);
+                // TODO : post message into queue jamify.ws.chat-message
+                message.metadata = {
+                    channel: this.config.ws.messageChannel
+                }
+                await this.publishMessage(message, QueueEnum.WS_CHAT_MESSAGE);
+
+                // await this.wsService.broadcastToRoom(message.roomId, this.config.ws.messageChannel, message);
             }
         } catch (error) {
             logger.error(`Error broadcasting message: ${error}`);

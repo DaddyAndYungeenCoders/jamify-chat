@@ -8,6 +8,7 @@ import {Config} from './models/interfaces/config.interface';
 import {QueueService} from './services/queue.service';
 import logger from './config/logger';
 import {setupSwagger} from "./config/swagger";
+import {authMiddleware} from "./middleware/jwt.middleware";
 
 export class App {
     public app: Application;
@@ -57,7 +58,7 @@ export class App {
     }
 
     private initializeRoutes(): void {
-        this.app.use('/api/messages', messageRoutes());
+        this.app.use('/api/messages', authMiddleware, messageRoutes());
     }
 
     private initializeSwagger(): void {

@@ -6,7 +6,6 @@ import {config} from "../config/config";
 import logger from "../config/logger";
 
 /**
-
  * Defines the message routes for the application.
  * @returns The configured router.
  */

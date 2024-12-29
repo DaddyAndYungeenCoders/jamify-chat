@@ -1,4 +1,5 @@
 export interface Config {
+    mode: string;
     port: number;
     host: string;
     activemq: {

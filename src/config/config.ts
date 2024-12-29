@@ -1,6 +1,7 @@
 import {Config} from "../models/interfaces/config.interface";
 
 export const config: Config = {
+    mode: process.env.NODE_ENV || 'development',
     port: parseInt(process.env.PORT || '3000'),
     host: process.env.HOST || 'localhost',
     activemq: {

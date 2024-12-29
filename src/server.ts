@@ -16,6 +16,7 @@ const HOST = config.host || 'localhost';
  */
 server.listen(PORT, () => {
     logger.info(`Chat MicroService is running on http://${HOST}:${PORT}`);
+    logger.info(`Swagger documentation available on http://${HOST}:${PORT}/api-docs`);
 });
 
 /**

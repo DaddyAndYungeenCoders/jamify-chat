@@ -7,6 +7,7 @@ import {errorHandler} from './middleware/error-handler';
 import {Config} from './models/interfaces/config.interface';
 import {QueueService} from './services/queue.service';
 import logger from './config/logger';
+import {setupSwagger} from "./config/swagger";
 
 export class App {
     public app: Application;
@@ -31,6 +32,7 @@ export class App {
         this.initializeServices();
         this.initializeMiddlewares();
         this.initializeRoutes();
+        this.initializeSwagger();
         this.initializeErrorHandling();
     }
 
@@ -56,6 +58,10 @@ export class App {
 
     private initializeRoutes(): void {
         this.app.use('/api/messages', messageRoutes());
+    }
+
+    private initializeSwagger(): void {
+        setupSwagger(this.app);
     }
 
     private initializeErrorHandling(): void {

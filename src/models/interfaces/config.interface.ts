@@ -18,7 +18,7 @@ export interface Config {
         messageChannel: string;
     };
     jwt: {
-        publicKey: string;
         algorithms: Algorithm[];
+        jwksUri: string;
     };
 }

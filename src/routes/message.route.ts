@@ -13,6 +13,11 @@ export const messageRoutes = () => {
     const router = Router();
     const messageService = MessageService.getInstance(config);
 
+    router.get('/', (req, res) => {
+        logger.info("Messages API");
+        res.json("Messages API");
+    });
+
     /**
      * Route to handle posting a new message.
      * Validates the message and then sends it using the MessageService.

@@ -57,7 +57,7 @@ export const messageRoutes = () => {
             next();
         });
     }, async (req, res, next) => {
-        logger.info(`Received HTTP message request with body: ${req.body}`);
+        logger.info(`Received HTTP message request with body: ${JSON.stringify(req.body)}`);
         try {
             const message: ChatMessage = {
                 ...req.body,

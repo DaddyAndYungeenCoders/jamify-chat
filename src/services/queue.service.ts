@@ -109,7 +109,7 @@ export class QueueService {
      * @throws Error if the messaging service is unavailable or the publisher is not connected.
      */
     public async publishMessage(message: ChatMessage, queue: QueueEnum): Promise<void> {
-        logger.info(`Publishing message: ${JSON.stringify(message)}`);
+        logger.info(`Try to publish message: ${JSON.stringify(message)} to queue ${queue}`);
         if (!this.isActiveMqAvailable) {
             logger.error('Messaging service is unavailable due to connection issues');
             throw new Error('Messaging service is unavailable due to connection issues');
@@ -130,7 +130,7 @@ export class QueueService {
                 const frame = this.publishClient.send(headers);
                 frame.write(JSON.stringify(message));
                 frame.end();
-                logger.info(`Message published: ${JSON.stringify(message)}`);
+                logger.info(`Message published: ${JSON.stringify(message)} to queue ${queue}`);
                 resolve();
             } else {
                 reject(new Error('Publish client is null'));
@@ -150,7 +150,7 @@ export class QueueService {
         }
 
         const subscribeHeaders = {
-            destination: `/queue/${this.config.activemq.queues.outgoing}`,
+            destination: `/queue/${QueueEnum.SEND_MESSAGE}`,
             ack: 'client-individual'
         };
 
@@ -203,8 +203,6 @@ export class QueueService {
                     channel: this.config.ws.messageChannel
                 }
                 await this.publishMessage(message, QueueEnum.WS_CHAT_MESSAGE);
-
-                // await this.wsService.broadcastToRoom(message.roomId, this.config.ws.messageChannel, message);
             }
         } catch (error) {
             logger.error(`Error broadcasting message: ${error}`);

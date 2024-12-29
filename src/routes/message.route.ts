@@ -4,6 +4,7 @@ import {MessageService} from "../services/message.service";
 import {ChatMessage} from "../models/interfaces/chat-message.interface";
 import {config} from "../config/config";
 import logger from "../config/logger";
+import {StatusCodes} from "http-status-codes";
 
 /**
  * Defines the message routes for the application.
@@ -63,7 +64,7 @@ export const messageRoutes = () => {
             };
             await messageService.sendQueueMessage(message);
 
-            res.status(202).json({
+            res.status(StatusCodes.ACCEPTED).json({
                 status: 'accepted',
                 messageId: message.id
             });

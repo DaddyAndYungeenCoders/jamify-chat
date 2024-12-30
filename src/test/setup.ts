@@ -1,5 +1,3 @@
-import { config } from '../config/config';
-
 // Mock logger to avoid console output during tests
 jest.mock('../utils/logger', () => ({
     logger: {

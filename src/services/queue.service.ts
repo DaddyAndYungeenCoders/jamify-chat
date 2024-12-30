@@ -19,7 +19,6 @@ export class QueueService {
     /**
      * Private constructor to enforce singleton pattern.
      * @param config - Configuration object.
-     * @param webSocketService - WebSocket manager instance.
      */
     private constructor(config: Config) {
         this.config = config;
@@ -28,7 +27,6 @@ export class QueueService {
     /**
      * Returns the singleton instance of QueueService.
      * @param config - Configuration object.
-     * @param webSocketService - WebSocket manager instance.
      * @returns The singleton instance of QueueService.
      */
     public static getInstance(config: Config): QueueService {
@@ -104,7 +102,7 @@ export class QueueService {
     /**
      * Publishes a message to the ActiveMQ queue.
      * @param message - The chat message to publish.
-     * @param queue
+     * @param queue - The queue to publish the message to.
      * @returns A promise that resolves when the message is published.
      * @throws Error if the messaging service is unavailable or the publisher is not connected.
      */

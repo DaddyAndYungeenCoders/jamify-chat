@@ -6,10 +6,8 @@ import {RequestContext} from "../utils/request-context";
  */
 export class WebsocketApiService {
 
-    // Singleton instance
     private static instance: WebsocketApiService;
 
-    // Private constructor to enforce singleton pattern
     private constructor() {
     }
 

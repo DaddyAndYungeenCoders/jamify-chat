@@ -10,12 +10,19 @@ import logger from './config/logger';
 import {setupSwagger} from "./config/swagger";
 import {authMiddleware} from "./middleware/jwt.middleware";
 
+/**
+ * Class representing the main application.
+ */
 export class App {
     public app: Application;
     public server: HttpServer;
     public io: SocketServer;
     private queueService: QueueService;
 
+    /**
+     * Create an instance of the App.
+     * @param {Config} config - The configuration object.
+     */
     constructor(config: Config) {
         this.app = express();
         this.server = createServer(this.app);
@@ -37,6 +44,11 @@ export class App {
         this.initializeErrorHandling();
     }
 
+    /**
+     * Initialize services required by the application.
+     * @private
+     * @async
+     */
     private async initializeServices(): Promise<void> {
         try {
             await this.queueService.connect();
@@ -47,6 +59,10 @@ export class App {
         }
     }
 
+    /**
+     * Initialize middlewares for the application.
+     * @private
+     */
     private initializeMiddlewares(): void {
         this.app.use(express.json());
         this.app.use(express.urlencoded({extended: true}));
@@ -57,18 +73,34 @@ export class App {
         }));
     }
 
+    /**
+     * Initialize routes for the application.
+     * @private
+     */
     private initializeRoutes(): void {
         this.app.use('/api/messages', authMiddleware, messageRoutes());
     }
 
+    /**
+     * Initialize Swagger for API documentation.
+     * @private
+     */
     private initializeSwagger(): void {
         setupSwagger(this.app);
     }
 
+    /**
+     * Initialize error handling middleware.
+     * @private
+     */
     private initializeErrorHandling(): void {
         this.app.use(errorHandler);
     }
 
+    /**
+     * Get the HTTP server instance.
+     * @returns {HttpServer} The HTTP server instance.
+     */
     public getServer(): HttpServer {
         return this.server;
     }

@@ -14,14 +14,14 @@ const jwks = jwksClient({
     jwksUri: config.jwt.jwksUri, // Public key URL
     cache: true,
     cacheMaxEntries: 5,          // Maximum number of entries in cache
-    cacheMaxAge: 10 * 60 * 1000,
+    cacheMaxAge: 10 * 60 * 1000, // 10 minutes
 });
 
 /**
- * Récupère la clé publique à partir des JWKs.
+ * Retrieves the public key from the JWKs.
  *
- * @param {jwt.JwtHeader} header - En-tête du JWT contenant le kid.
- * @param {function(Error|null, string=): void} callback - Fonction pour retourner la clé publique.
+ * @param {jwt.JwtHeader} header - JWT header containing the kid.
+ * @param {function(Error|null, string=): void} callback - Function to return the public key.
  */
 const getKey = (header: jwt.JwtHeader, callback: (err: Error | null, key?: string) => void): void => {
 

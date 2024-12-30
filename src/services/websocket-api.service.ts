@@ -1,4 +1,5 @@
 import {API} from '../models/enums/api.enum';
+import {RequestContext} from "../utils/request-context";
 
 /**
  * Service for handling WebSocket API calls.
@@ -31,10 +32,14 @@ export class WebsocketApiService {
      * @throws Error if the room creation fails.
      */
     public async createPrivateRoom(userId: string, destId: string): Promise<string> {
+        const token = RequestContext.getInstance().getToken();
+
         const response = await fetch(`${API.WS.BASE}${API.WS.PRIVATE_ROOM}`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`,
+
             },
             body: JSON.stringify({userId, destId}),
         });
@@ -54,10 +59,13 @@ export class WebsocketApiService {
      * @throws Error if adding users to the room fails.
      */
     public async addUsersToPrivateRoom(roomId: string, usersId: string[]): Promise<void> {
+        const token = RequestContext.getInstance().getToken();
+
         const response = await fetch(`${API.WS.BASE}${API.WS.ADD_USERS_TO_PRIVATE_ROOM}`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`,
             },
             body: JSON.stringify({roomId, usersId}),
         });

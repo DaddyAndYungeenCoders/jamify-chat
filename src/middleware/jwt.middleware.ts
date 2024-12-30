@@ -4,6 +4,7 @@ import logger from '../config/logger';
 import jwksClient from 'jwks-rsa';
 import {config} from "../config/config";
 import {StatusCodes} from "http-status-codes";
+import {RequestContext} from "../utils/request-context";
 
 export interface AuthRequest extends Request {
     user?: JwtPayload;
@@ -66,36 +67,42 @@ export const authMiddleware: RequestHandler = (
 
     const token = authHeader.split(' ')[1];
 
-    jwt.verify(
-        token,
-        getKey, // Get the public key
-        {algorithms: config.jwt.algorithms, issuer: "http://localhost:8081"}, // Only allow the specified algorithms
-        (error: VerifyErrors | null, decoded: string | JwtPayload | undefined) => {
-            if (error) {
-                logger.error(`JWT verification failed: ${error.message}`);
+    if (token) {
+        // Set the token in the request context
+        RequestContext.getInstance().setContext(token);
 
-                if (error.name === 'TokenExpiredError') {
-                    res.status(StatusCodes.UNAUTHORIZED).json({message: 'Token expiré'});
+        // Verify the token with the public key served by the JWKS endpoint
+        jwt.verify(
+            token,
+            getKey, // Get the public key
+            {algorithms: config.jwt.algorithms, issuer: "http://localhost:8081"}, // Only allow the specified algorithms
+            (error: VerifyErrors | null, decoded: string | JwtPayload | undefined) => {
+                if (error) {
+                    logger.error(`JWT verification failed: ${error.message}`);
+
+                    if (error.name === 'TokenExpiredError') {
+                        res.status(StatusCodes.UNAUTHORIZED).json({message: 'Token expiré'});
+                        return;
+                    }
+                    if (error.name === 'JsonWebTokenError') {
+                        res.status(StatusCodes.UNAUTHORIZED).json({message: 'Token invalide'});
+                        return;
+                    }
+
+                    res.status(StatusCodes.UNAUTHORIZED).json({message: 'Erreur lors de la vérification du token'});
                     return;
                 }
-                if (error.name === 'JsonWebTokenError') {
-                    res.status(StatusCodes.UNAUTHORIZED).json({message: 'Token invalide'});
+
+                // Check if the decoded payload is a JwtPayload object
+                if (typeof decoded === 'string' || !decoded) {
+                    logger.error('Invalid token payload: Expected JwtPayload');
+                    res.status(StatusCodes.UNAUTHORIZED).json({message: 'Payload du token invalide'});
                     return;
                 }
 
-                res.status(StatusCodes.UNAUTHORIZED).json({message: 'Erreur lors de la vérification du token'});
-                return;
+                req.user = decoded;
+                next();
             }
-
-            // Check if the decoded payload is a JwtPayload object
-            if (typeof decoded === 'string' || !decoded) {
-                logger.error('Invalid token payload: Expected JwtPayload');
-                res.status(StatusCodes.UNAUTHORIZED).json({message: 'Payload du token invalide'});
-                return;
-            }
-
-            req.user = decoded;
-            next();
-        }
-    );
+        );
+    }
 };

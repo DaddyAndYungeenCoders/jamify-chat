@@ -26,6 +26,16 @@ export const messageRoutes = () => {
      * /api/messages/send:
      *   post:
      *     summary: Send a new message.
+     *     security:
+     *       - bearerAuth: []
+     *     parameters:
+     *       - in: header
+     *         name: Authorization
+     *         schema:
+     *           type: string
+     *         required: true
+     *         description: JWT token
+     *         example: Bearer <JWT>
      *     tags:
      *       - Messages
      *     requestBody:

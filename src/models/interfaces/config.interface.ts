@@ -17,4 +17,10 @@ export interface Config {
         algorithms: Algorithm[];
         jwksUri: string;
     };
+    mongo: {
+        baseUri: string;
+        dbName: string;
+        username: string;
+        password: string;
+    }
 }

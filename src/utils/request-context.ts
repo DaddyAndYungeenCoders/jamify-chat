@@ -20,12 +20,24 @@ export class RequestContext {
         return RequestContext.instance;
     }
 
+    middleware() {
+        return (req: any, res: any, next: any) => {
+            // Initialise le contexte pour toute la durée de la requête
+            this.storage.run({ token: '' }, () => {
+                next();
+            });
+        };
+    }
+
     /**
      * Set the context with a given token.
      * @param {string} token - The Bearer token to be stored in the context.
      */
-    setContext(token: string) {
-        this.storage.run({token}, () => {});
+    setToken(token: string) {
+        const store = this.storage.getStore();
+        if (store) {
+            store.token = token;
+        }
     }
 
     /**

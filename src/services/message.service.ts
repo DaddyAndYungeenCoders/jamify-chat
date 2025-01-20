@@ -5,6 +5,7 @@ import {Config} from "../models/interfaces/config.interface";
 import logger from "../config/logger";
 import {QueueEnum} from "../models/enums/queue.enum";
 import {WebsocketApiService} from "./websocket-api.service";
+import {PrivateMessage} from "../models/schemas/privateMessage.schema";
 
 interface MessageValidationResult {
     isValid: boolean;
@@ -42,7 +43,7 @@ export class MessageService {
     }
 
     /**
-     * Sends a message to the queue after validation and room handling.
+     * Sends a message to the queue after validation, save and room handling.
      * @param message - The chat message to be sent.
      * @returns The message data that was sent.
      * @throws Error if the message is invalid or room creation fails.
@@ -61,11 +62,16 @@ export class MessageService {
         // Create the message with base data
         const messageData = this.createBaseMessage(message);
 
-        // Handle room creation/verification if necessary
-        await this.handleRoomCreation(messageData);
+        if (messageData.roomId) {
+            await this.savePrivateMessageToDB(messageData);
+            await this.queueService.publishMessage(messageData, QueueEnum.WS_CHAT_MESSAGE);
+            return messageData;
+        }
 
-        // Publish the message
-        await this.queueService.publishMessage(messageData, QueueEnum.SAVE_AND_REPUB);
+        // Handle room creation/verification if necessary
+        const messageWithRoom = await this.handleRoomCreation(messageData);
+        await this.savePrivateMessageToDB(messageWithRoom);
+        await this.queueService.publishMessage(messageData, QueueEnum.WS_CHAT_MESSAGE);
         return messageData;
     }
 
@@ -110,20 +116,62 @@ export class MessageService {
      * @param message - The chat message containing room information.
      * @throws Error if room creation fails.
      */
-    private async handleRoomCreation(message: ChatMessage): Promise<void> {
+    private async handleRoomCreation(message: ChatMessage): Promise<ChatMessage> {
         // if message has no roomId and has destId, create private room if not exists
         if (!message.roomId && message.destId) {
             if (!message.roomId && message.destId) {
                 try {
                     message.roomId = await this.websocketApiService.createPrivateRoom(message.senderId, message.destId);
                     await this.websocketApiService.addUsersToPrivateRoom(message.roomId, [message.senderId, message.destId]);
+                    return message;
                 } catch (error) {
                     logger.error(`Error creating private room: ${error}`);
                     throw error;
                 }
             }
         }
+        return message;
     }
+
+    /**
+     * Saves the message to the database.
+     * @param messageData
+     */
+    async savePrivateMessageToDB(messageData: ChatMessage): Promise<any> {
+            try {
+                const privateMessage = new PrivateMessage({
+                    roomId: messageData.roomId,
+                    userAId: messageData.senderId,
+                    userBId: messageData.destId,
+                    content: messageData.content,
+                    metadata: messageData.metadata
+                });
+
+                return await privateMessage.save();
+            } catch (error) {
+                logger.error('Error creating message:', error);
+                throw error;
+            }
+        }
+
+
+    // async getMessagesForRoom(roomId: string, options = {
+    //     limit: 50,
+    //     before?: Date,
+    //     after?: Date
+    // }): Promise<any[]> {
+    //     try {
+    //         // TODO
+    //         return await Message.find({roomId})
+    //             .sort({timestamp: -1})
+    //             .limit(options.limit)
+    //             .exec();
+    //     } catch (error) {
+    //         logger.error('Error getting messages:', error);
+    //         throw error;
+    //     }
+    // }
+
 
     /**
      * Generates a unique message ID.

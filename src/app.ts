@@ -9,6 +9,8 @@ import {QueueService} from './services/queue.service';
 import logger from './config/logger';
 import {setupSwagger} from "./config/swagger";
 import {authMiddleware} from "./middleware/jwt.middleware";
+import {initializeDatabase} from "./config/database";
+import {RequestContext} from "./utils/request-context";
 
 /**
  * Class representing the main application.
@@ -34,6 +36,8 @@ export class App {
                 credentials: true
             }
         });
+
+        initializeDatabase(config);
 
         this.queueService = QueueService.getInstance(config);
 
@@ -64,7 +68,9 @@ export class App {
      * @private
      */
     private initializeMiddlewares(): void {
+        const requestContext = RequestContext.getInstance();
         this.app.use(express.json());
+        this.app.use(requestContext.middleware())
         this.app.use(express.urlencoded({extended: true}));
         this.app.use(cors({
             origin: 'http://localhost:5173',

@@ -69,13 +69,14 @@ export const authMiddleware: RequestHandler = (
 
     if (token) {
         // Set the token in the request context
-        RequestContext.getInstance().setContext(token);
+        const requestContext = RequestContext.getInstance()
+        requestContext.setToken(token);
 
         // Verify the token with the public key served by the JWKS endpoint
         jwt.verify(
             token,
             getKey, // Get the public key
-            {algorithms: config.jwt.algorithms, issuer: "http://localhost:8081"}, // Only allow the specified algorithms
+            {algorithms: config.jwt.algorithms, issuer: "https://jamify.daddyornot.xyz/jamify-uaa"}, // Only allow the specified algorithms
             (error: VerifyErrors | null, decoded: string | JwtPayload | undefined) => {
                 if (error) {
                     logger.error(`JWT verification failed: ${error.message}`);

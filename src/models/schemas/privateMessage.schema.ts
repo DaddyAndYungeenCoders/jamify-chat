@@ -1,6 +1,21 @@
 import mongoose from 'mongoose';
 
+export interface IPrivateMessage extends Document {
+    id: string;
+    roomId: string;
+    userAId: string;
+    userBId: string;
+    content: string;
+    timestamp: Date;
+    metadata?: Map<string, any>;
+}
+
 const privateMessageSchema = new mongoose.Schema({
+    id: {
+        type: String,
+        required: true,
+        index: true
+    },
     roomId: {
         type: String,
         required: true,
@@ -28,4 +43,4 @@ const privateMessageSchema = new mongoose.Schema({
     }
 });
 
-export const PrivateMessage = mongoose.model('PrivateMessage', privateMessageSchema);
+export const PrivateMessage = mongoose.model<IPrivateMessage>('PrivateMessage', privateMessageSchema);

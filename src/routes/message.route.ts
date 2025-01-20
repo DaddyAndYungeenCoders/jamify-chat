@@ -83,5 +83,16 @@ export const messageRoutes = () => {
         }
     });
 
+    router.get('/:roomId', async (req, res, next) => {
+        const roomId = req.params.roomId;
+        try {
+            const messages = await messageService.getMessagesForRoom(roomId, {});
+            res.json(messages);
+        } catch (error) {
+            next(error);
+        }
+
+    });
+
     return router;
 };

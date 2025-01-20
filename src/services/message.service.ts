@@ -1,11 +1,12 @@
-import {v4 as uuidv4} from "uuid";
 import {ChatMessage} from "../models/interfaces/chat-message.interface";
 import {QueueService} from "./queue.service";
 import {Config} from "../models/interfaces/config.interface";
 import logger from "../config/logger";
 import {QueueEnum} from "../models/enums/queue.enum";
 import {WebsocketApiService} from "./websocket-api.service";
-import {PrivateMessage} from "../models/schemas/privateMessage.schema";
+import {IMessageRepository} from "../repository/IMessageRepository";
+import {MessageRepository} from "../repository/impl/MessageRepository";
+import {MessageQueryOptions} from "../models/interfaces/MessageQueryOptions";
 
 interface MessageValidationResult {
     isValid: boolean;
@@ -20,6 +21,7 @@ export class MessageService {
     static instance: MessageService;
     private queueService: QueueService;
     private websocketApiService: WebsocketApiService;
+    private messageRepository: IMessageRepository;
 
     /**
      * Private constructor to enforce singleton pattern.
@@ -28,6 +30,7 @@ export class MessageService {
     private constructor(config: Config) {
         this.queueService = QueueService.getInstance(config);
         this.websocketApiService = WebsocketApiService.getInstance();
+        this.messageRepository = MessageRepository.getInstance();
     }
 
     /**
@@ -63,16 +66,16 @@ export class MessageService {
         const messageData = this.createBaseMessage(message);
 
         if (messageData.roomId) {
-            await this.savePrivateMessageToDB(messageData);
-            await this.queueService.publishMessage(messageData, QueueEnum.WS_CHAT_MESSAGE);
-            return messageData;
+            const messageToPublish = await this.savePrivateMessageToDB(messageData);
+            await this.queueService.publishMessage(messageToPublish, QueueEnum.WS_CHAT_MESSAGE);
+            return messageToPublish;
         }
 
         // Handle room creation/verification if necessary
         const messageWithRoom = await this.handleRoomCreation(messageData);
-        await this.savePrivateMessageToDB(messageWithRoom);
-        await this.queueService.publishMessage(messageData, QueueEnum.WS_CHAT_MESSAGE);
-        return messageData;
+        const messageToPublish = await this.savePrivateMessageToDB(messageWithRoom);
+        await this.queueService.publishMessage(messageToPublish, QueueEnum.WS_CHAT_MESSAGE);
+        return messageToPublish;
     }
 
     /**
@@ -103,7 +106,7 @@ export class MessageService {
      */
     private createBaseMessage(message: ChatMessage): ChatMessage {
         return {
-            id: MessageService.generateMessageId(),
+            id: "will be replaced in message repository",
             senderId: message.senderId,
             content: message.content,
             timestamp: new Date().toISOString(),
@@ -137,47 +140,23 @@ export class MessageService {
      * Saves the message to the database.
      * @param messageData
      */
-    async savePrivateMessageToDB(messageData: ChatMessage): Promise<any> {
-            try {
-                const privateMessage = new PrivateMessage({
-                    roomId: messageData.roomId,
-                    userAId: messageData.senderId,
-                    userBId: messageData.destId,
-                    content: messageData.content,
-                    metadata: messageData.metadata
-                });
-
-                return await privateMessage.save();
-            } catch (error) {
-                logger.error('Error creating message:', error);
-                throw error;
-            }
+    async savePrivateMessageToDB(messageData: ChatMessage): Promise<ChatMessage> {
+        try {
+            return await this.messageRepository.save(messageData);
+        } catch (error) {
+            logger.error('Error creating message:', error);
+            throw error;
         }
-
-
-    // async getMessagesForRoom(roomId: string, options = {
-    //     limit: 50,
-    //     before?: Date,
-    //     after?: Date
-    // }): Promise<any[]> {
-    //     try {
-    //         // TODO
-    //         return await Message.find({roomId})
-    //             .sort({timestamp: -1})
-    //             .limit(options.limit)
-    //             .exec();
-    //     } catch (error) {
-    //         logger.error('Error getting messages:', error);
-    //         throw error;
-    //     }
-    // }
-
-
-    /**
-     * Generates a unique message ID.
-     * @returns A unique message ID.
-     */
-    public static generateMessageId(): string {
-        return `msg_${Date.now()}_${uuidv4().toString()}`;
     }
+
+
+    async getMessagesForRoom(roomId: string, options: MessageQueryOptions): Promise<any[]> {
+        try {
+            return await this.messageRepository.findByRoomId(roomId, options);
+        } catch (error) {
+            logger.error('Error getting messages:', error);
+            throw error;
+        }
+    }
+
 }

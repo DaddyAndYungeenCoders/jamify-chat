@@ -80,7 +80,7 @@ export class MessageRepository implements IMessageRepository {
     async findByUser(userId: string): Promise<ChatMessage[]> {
         try {
             const query = PrivateMessage.find({
-                roomId: { $regex: `${RoomPrefix.PRIVATE}*${userId}`, $options: 'i' }
+                roomId: { $regex: `${RoomPrefix.PRIVATE}*${userId}*`, $options: 'i' }
             });
 
             const messages = await query.sort({ timestamp: -1 });

@@ -21,8 +21,6 @@ export const messageRoutes = () => {
     });
 
     /**
-     * Route to handle posting a new message.
-     * Validates the message and then sends it using the MessageService.
      * @swagger
      * /api/messages/send:
      *   post:
@@ -84,6 +82,30 @@ export const messageRoutes = () => {
         }
     });
 
+    /**
+     * @swagger
+     * /api/messages/{roomId}:
+     *   get:
+     *     summary: Get messages for a specific room.
+     *     parameters:
+     *       - in: path
+     *         name: roomId
+     *         schema:
+     *           type: string
+     *         required: true
+     *         description: The ID of the room.
+     *     tags:
+     *       - Messages
+     *     responses:
+     *       200:
+     *         description: An array of chat messages for the specified room.
+     *         content:
+     *           application/json:
+     *             schema:
+     *               type: array
+     *               items:
+     *                 $ref: '#/components/schemas/ChatMessage'
+     */
     router.get('/:roomId', async (req, res, next) => {
         const roomId = req.params.roomId;
         logger.info(`Received HTTP message request for room ${roomId}`);
@@ -96,6 +118,30 @@ export const messageRoutes = () => {
         }
     });
 
+    /**
+     * @swagger
+     * /api/messages/get/{userId}:
+     *   get:
+     *     summary: Get all conversations for a specific user.
+     *     parameters:
+     *       - in: path
+     *         name: userId
+     *         schema:
+     *           type: string
+     *         required: true
+     *         description: The ID of the user.
+     *     tags:
+     *       - Messages
+     *     responses:
+     *       200:
+     *         description: An array of conversation details for the specified user.
+     *         content:
+     *           application/json:
+     *             schema:
+     *               type: array
+     *               items:
+     *                 $ref: '#/components/schemas/ConversationDetails'
+     */
     router.get('/get/:userId', async (req, res, next) => {
         const userId = req.params.userId;
         logger.info(`Received HTTP get all message request for user ${userId}`);
@@ -108,7 +154,28 @@ export const messageRoutes = () => {
         }
     });
 
-
+    /**
+     * @swagger
+     * /api/messages/conversation/room/{roomId}:
+     *   get:
+     *     summary: Get conversation details for a specific room.
+     *     parameters:
+     *       - in: path
+     *         name: roomId
+     *         schema:
+     *           type: string
+     *         required: true
+     *         description: The ID of the room.
+     *     tags:
+     *       - Messages
+     *     responses:
+     *       200:
+     *         description: The conversation details for the specified room.
+     *         content:
+     *           application/json:
+     *             schema:
+     *               $ref: '#/components/schemas/ConversationDetails'
+     */
     router.get('/conversation/room/:roomId', async (req, res, next) => {
         const roomId = req.params.roomId;
         logger.info(`Received HTTP conversation request for room ${roomId}`);
@@ -119,7 +186,6 @@ export const messageRoutes = () => {
         } catch (error) {
             next(error);
         }
-
     });
 
     return router;

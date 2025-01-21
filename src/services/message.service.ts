@@ -144,7 +144,9 @@ export class MessageService {
 
     /**
      * Saves the message to the database.
-     * @param messageData
+     * @param messageData - The chat message data to be saved.
+     * @returns The saved chat message.
+     * @throws Error if saving the message fails.
      */
     async savePrivateMessageToDB(messageData: ChatMessage): Promise<ChatMessage> {
         try {
@@ -155,7 +157,13 @@ export class MessageService {
         }
     }
 
-
+    /**
+     * Retrieves messages for a specific room.
+     * @param roomId - The ID of the room.
+     * @param options - Query options for retrieving messages.
+     * @returns An array of chat messages for the specified room.
+     * @throws Error if retrieving messages fails.
+     */
     async getMessagesForRoom(roomId: string, options: MessageQueryOptions): Promise<ChatMessage[]> {
         try {
             return await this.messageRepository.findByRoomId(roomId, options);
@@ -165,6 +173,12 @@ export class MessageService {
         }
     }
 
+    /**
+     * Retrieves conversations for a specific user.
+     * @param userId - The ID of the user.
+     * @returns An array of conversation details for the specified user.
+     * @throws Error if retrieving conversations fails.
+     */
     async getConversationsForUser(userId: string): Promise<ConversationDetails[]> {
         try {
             const messages = await this.messageRepository.findByUser(userId);
@@ -185,6 +199,10 @@ export class MessageService {
                 }
             }
 
+            if (currentMessages.length > 0) {
+                conversations.push(await this.buildConversationDetails(currentMessages));
+            }
+
             return conversations;
         } catch (error) {
             logger.error('Error getting messages:', error);
@@ -192,6 +210,12 @@ export class MessageService {
         }
     }
 
+    /**
+     * Retrieves conversation details for a specific room.
+     * @param roomId - The ID of the room.
+     * @returns The conversation details for the specified room.
+     * @throws Error if retrieving conversation details fails.
+     */
     public async getConversationForRoom(roomId: string): Promise<ConversationDetails> {
         try {
             const messages = await this.getMessagesForRoom(roomId, {});
@@ -202,6 +226,12 @@ export class MessageService {
         }
     }
 
+    /**
+     * Builds conversation details from an array of chat messages.
+     * @param messages - The array of chat messages.
+     * @returns The conversation details.
+     * @throws Error if retrieving users fails.
+     */
     private async buildConversationDetails(messages: ChatMessage[]): Promise<ConversationDetails> {
 
         // TODO: better handling....
@@ -216,18 +246,44 @@ export class MessageService {
 
         // cache user ids in the future
         const userIds = this.extractUserIdsFromRoomId(messages[0].roomId);
-        const user1: User = await this.userService.getUserByUserProviderId(userIds[0]);
-        const user2: User = await this.userService.getUserByUserProviderId(userIds[1]);
+        try {
+            console.log("Get user with id " + userIds[0]);
+            let user1: User | null = await this.userService.getUserByUserProviderId(userIds[0])
+                .then(user => user)
+                .catch(error => {
+                    logger.error('Failed to fetch user:', error);
+                    return null;
+                })
+            console.log("Get user with id " + userIds[1]);
+            const user2: User | null = await this.userService.getUserByUserProviderId(userIds[1])
+                .then(user => {
+                    console.log("User found: " + user);
+                    return user;
+                })
+                .catch(error => {
+                    logger.error('Failed to fetch user:', error);
+                    return null;
+                });
 
+            const participants: User[] = [user1, user2].filter((user): user is User => user !== null);
 
-        return {
-            id: messages[0].roomId,
-            messages: messages,
-            participants: [user1, user2],
-            lastMessageAt: messages[0].timestamp,
+            return {
+                id: messages[0].roomId,
+                messages: messages,
+                participants: participants,
+                lastMessageAt: messages[0].timestamp,
+            }
+        } catch (error) {
+            logger.error('Error getting users:', error);
+            throw error;
         }
     }
 
+    /**
+     * Extracts user IDs from a room ID.
+     * @param roomId - The ID of the room.
+     * @returns An array of user IDs.
+     */
     private extractUserIdsFromRoomId(roomId: string): string[] {
         // always start with private-room_ or jam-room_ or event-room_
         const prefix = roomId.split('_')[0];

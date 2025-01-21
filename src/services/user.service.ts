@@ -24,8 +24,6 @@ export class UserService {
 
     async getUserByUserProviderId(userProviderId: string): Promise<User> {
         // Fetch user from engine
-        // FIXME
-        userProviderId = "1122291430";
         const token = RequestContext.getInstance().getToken();
         return fetch(`${this.config.engine.uri}/users/providerId/${userProviderId}`, {
             method: 'GET',

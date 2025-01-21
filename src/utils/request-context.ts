@@ -1,4 +1,4 @@
-import {AsyncLocalStorage} from "node:async_hooks";
+import { AsyncLocalStorage } from "node:async_hooks";
 
 /**
  * Class to manage request context using AsyncLocalStorage.
@@ -20,9 +20,13 @@ export class RequestContext {
         return RequestContext.instance;
     }
 
+    /**
+     * Middleware to initialize the context for the duration of the request.
+     * @returns {Function} The middleware function.
+     */
     middleware() {
         return (req: any, res: any, next: any) => {
-            // Initialise le contexte pour toute la durée de la requête
+            // Initialize the context for the duration of the request
             this.storage.run({ token: '' }, () => {
                 next();
             });

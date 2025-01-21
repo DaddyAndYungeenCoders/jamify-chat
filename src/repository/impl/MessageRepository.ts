@@ -4,7 +4,8 @@ import {IPrivateMessage, PrivateMessage} from "../../models/schemas/privateMessa
 import logger from "../../config/logger";
 import {Query} from "mongoose";
 import {v4 as uuidv4} from "uuid";
-import {MessageQueryOptions} from "../../models/interfaces/MessageQueryOptions";
+import {MessageQueryOptions} from "../../models/interfaces/message-query.options";
+import {RoomPrefix} from "../../models/enums/room-prefix.enum";
 
 export class MessageRepository implements IMessageRepository {
     private static instance: MessageRepository;
@@ -76,6 +77,20 @@ export class MessageRepository implements IMessageRepository {
         }
     }
 
+    async findByUser(userId: string): Promise<ChatMessage[]> {
+        try {
+            const query = PrivateMessage.find({
+                roomId: { $regex: `${RoomPrefix.PRIVATE}*${userId}`, $options: 'i' }
+            });
+
+            const messages = await query.sort({ timestamp: -1 });
+            return messages.map((msg: IPrivateMessage) => this.mapToChatMessage(msg));
+        } catch (error) {
+            logger.error('Error finding messages by user ID:', error);
+            throw new Error('Failed to find messages');
+        }
+    }
+
     async update(messageId: string, update: Partial<ChatMessage>): Promise<ChatMessage | null> {
         try {
             const updatedMessage = await PrivateMessage.findOneAndUpdate(
@@ -132,7 +147,7 @@ export class MessageRepository implements IMessageRepository {
             query = query.limit(limit);
         }
 
-        return query.sort({ timestamp: -1 });
+        return query;
     }
 
     /**

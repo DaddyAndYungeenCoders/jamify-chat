@@ -23,11 +23,9 @@ const privateMessageSchema = new mongoose.Schema({
     },
     userAId: {
         type: String,
-        required: true
     },
     userBId: {
         type: String,
-        required: true
     },
     content: {
         type: String,

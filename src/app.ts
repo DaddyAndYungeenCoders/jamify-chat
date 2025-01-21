@@ -84,7 +84,7 @@ export class App {
      * @private
      */
     private initializeRoutes(): void {
-        this.app.use('/api/messages', authMiddleware, messageRoutes());
+        this.app.use('/api/v1/messages', authMiddleware, messageRoutes());
     }
 
     /**

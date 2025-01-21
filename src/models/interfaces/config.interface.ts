@@ -22,5 +22,8 @@ export interface Config {
         dbName: string;
         username: string;
         password: string;
+    };
+    engine: {
+        uri: string;
     }
 }

@@ -6,7 +6,11 @@ import {QueueEnum} from "../models/enums/queue.enum";
 import {WebsocketApiService} from "./websocket-api.service";
 import {IMessageRepository} from "../repository/IMessageRepository";
 import {MessageRepository} from "../repository/impl/MessageRepository";
-import {MessageQueryOptions} from "../models/interfaces/MessageQueryOptions";
+import {MessageQueryOptions} from "../models/interfaces/message-query.options";
+import {ConversationDetails} from "../models/interfaces/conversation.details";
+import {User} from "../models/interfaces/user/user.types";
+import {UserService} from "./user.service";
+import assert from "node:assert";
 
 interface MessageValidationResult {
     isValid: boolean;
@@ -22,6 +26,7 @@ export class MessageService {
     private queueService: QueueService;
     private websocketApiService: WebsocketApiService;
     private messageRepository: IMessageRepository;
+    private userService: UserService;
 
     /**
      * Private constructor to enforce singleton pattern.
@@ -31,6 +36,7 @@ export class MessageService {
         this.queueService = QueueService.getInstance(config);
         this.websocketApiService = WebsocketApiService.getInstance();
         this.messageRepository = MessageRepository.getInstance();
+        this.userService = UserService.getInstance(config);
     }
 
     /**
@@ -150,13 +156,89 @@ export class MessageService {
     }
 
 
-    async getMessagesForRoom(roomId: string, options: MessageQueryOptions): Promise<any[]> {
+    async getMessagesForRoom(roomId: string, options: MessageQueryOptions): Promise<ChatMessage[]> {
         try {
             return await this.messageRepository.findByRoomId(roomId, options);
         } catch (error) {
             logger.error('Error getting messages:', error);
             throw error;
         }
+    }
+
+    async getConversationsForUser(userId: string): Promise<ConversationDetails[]> {
+        try {
+            const messages = await this.messageRepository.findByUser(userId);
+            const conversations: ConversationDetails[] = [];
+            let currentRoomId = "";
+            let currentMessages: ChatMessage[] = [];
+
+            for (const message of messages) {
+                assert(message.roomId, 'Message must have a roomId');
+                if (currentRoomId !== message.roomId) {
+                    if (currentMessages.length > 0) {
+                        conversations.push(await this.buildConversationDetails(currentMessages));
+                    }
+                    currentRoomId = message.roomId;
+                    currentMessages = [message];
+                } else {
+                    currentMessages.push(message);
+                }
+            }
+
+            return conversations;
+        } catch (error) {
+            logger.error('Error getting messages:', error);
+            throw error;
+        }
+    }
+
+    public async getConversationForRoom(roomId: string): Promise<ConversationDetails> {
+        try {
+            const messages = await this.getMessagesForRoom(roomId, {});
+            return await this.buildConversationDetails(messages);
+        } catch (error) {
+            logger.error('Error getting messages:', error);
+            throw error;
+        }
+    }
+
+    private async buildConversationDetails(messages: ChatMessage[]): Promise<ConversationDetails> {
+
+        // TODO: better handling....
+        if (messages.length === 0 || !messages[0].roomId || !messages[0].timestamp) {
+            return {
+                id: "",
+                messages: [],
+                participants: [],
+                lastMessageAt: new Date().toISOString(),
+            }
+        }
+
+        // cache user ids in the future
+        const userIds = this.extractUserIdsFromRoomId(messages[0].roomId);
+        const user1: User = await this.userService.getUserByUserProviderId(userIds[0]);
+        const user2: User = await this.userService.getUserByUserProviderId(userIds[1]);
+
+
+        return {
+            id: messages[0].roomId,
+            messages: messages,
+            participants: [user1, user2],
+            lastMessageAt: messages[0].timestamp,
+        }
+    }
+
+    private extractUserIdsFromRoomId(roomId: string): string[] {
+        // always start with private-room_ or jam-room_ or event-room_
+        const prefix = roomId.split('_')[0];
+        const userIds: string[] = [];
+        if (prefix === 'private-room') {
+            userIds.push(roomId.split('_')[1]);
+            userIds.push(roomId.split('_')[2]);
+        } else if (prefix === 'jam-room' || prefix === 'event-room') {
+            // TODO ?
+        }
+        return userIds;
     }
 
 }

@@ -5,6 +5,7 @@ import {ChatMessage} from "../models/interfaces/chat-message.interface";
 import {config} from "../config/config";
 import logger from "../config/logger";
 import {StatusCodes} from "http-status-codes";
+import {ConversationDetails} from "../models/interfaces/conversation.details";
 
 /**
  * Defines the message routes for the application.
@@ -85,8 +86,35 @@ export const messageRoutes = () => {
 
     router.get('/:roomId', async (req, res, next) => {
         const roomId = req.params.roomId;
+        logger.info(`Received HTTP message request for room ${roomId}`);
         try {
-            const messages = await messageService.getMessagesForRoom(roomId, {});
+            const messages: ChatMessage[] = await messageService.getMessagesForRoom(roomId, {});
+            console.log(`Returning ${messages.length} messages for room ${roomId}`);
+            res.json(messages);
+        } catch (error) {
+            next(error);
+        }
+    });
+
+    router.get('/get/:userId', async (req, res, next) => {
+        const userId = req.params.userId;
+        logger.info(`Received HTTP get all message request for user ${userId}`);
+        try {
+            const messages: ConversationDetails[] = await messageService.getConversationsForUser(userId);
+            logger.info(`Returning ${messages.length} conversations for user ${userId}`);
+            res.json(messages);
+        } catch (error) {
+            next(error);
+        }
+    });
+
+
+    router.get('/conversation/room/:roomId', async (req, res, next) => {
+        const roomId = req.params.roomId;
+        logger.info(`Received HTTP conversation request for room ${roomId}`);
+        try {
+            const messages: ConversationDetails = await messageService.getConversationForRoom(roomId);
+            console.log(`Returning conversation for room ${roomId}`);
             res.json(messages);
         } catch (error) {
             next(error);

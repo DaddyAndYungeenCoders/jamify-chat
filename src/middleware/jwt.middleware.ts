@@ -79,7 +79,7 @@ export const authMiddleware: RequestHandler = (
             {algorithms: config.jwt.algorithms, issuer: "https://jamify.daddyornot.xyz/jamify-uaa"}, // Only allow the specified algorithms
             (error: VerifyErrors | null, decoded: string | JwtPayload | undefined) => {
                 if (error) {
-                    logger.error(`JWT verification failed: ${error.message}`);
+                    logger.error(`JWT verification failed for ${token} : ${error.message}`);
 
                     if (error.name === 'TokenExpiredError') {
                         res.status(StatusCodes.UNAUTHORIZED).json({message: 'Token expiré'});

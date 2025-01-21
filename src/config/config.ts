@@ -23,5 +23,9 @@ export const config: Config = {
         dbName: process.env.MONGO_DB_NAME || 'chat-db',
         username: process.env.MONGO_USERNAME || 'user',
         password: process.env.MONGO_PASSWORD || 'pwd',
+    },
+    engine: {
+        // uri: process.env.ENGINE_URI || 'https://jamify.daddyornot.xyz/jamify-engine/api/v1',
+        uri: process.env.ENGINE_URI || 'http://localhost:8082/api/v1',
     }
 };

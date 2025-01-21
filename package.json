@@ -5,6 +5,7 @@
   "main": "src/server.ts",
   "scripts": {
     "start": "node dist/server.js",
+    "build": "tsc",
     "dev": "nodemon --exec ts-node src/server.ts --host 0.0.0.0",
     "test": "jest",
     "test:watch": "jest --watch",

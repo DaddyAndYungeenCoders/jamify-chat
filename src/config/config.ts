@@ -25,7 +25,7 @@ export const config: Config = {
         password: process.env.MONGO_PASSWORD || 'pwd',
     },
     engine: {
-        // uri: process.env.ENGINE_URI || 'https://jamify.daddyornot.xyz/jamify-engine/api/v1',
-        uri: process.env.ENGINE_URI || 'http://localhost:8082/api/v1',
+        uri: process.env.ENGINE_URI || 'https://jamify.daddyornot.xyz/jamify-engine/api/v1',
+        // uri: process.env.ENGINE_URI || 'http://localhost:8082/api/v1',
     }
 };

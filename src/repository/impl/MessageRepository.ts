@@ -10,7 +10,8 @@ import {RoomPrefix} from "../../models/enums/room-prefix.enum";
 export class MessageRepository implements IMessageRepository {
     private static instance: MessageRepository;
 
-    private constructor() {}
+    private constructor() {
+    }
 
     public static getInstance(): MessageRepository {
         if (!MessageRepository.instance) {
@@ -41,7 +42,7 @@ export class MessageRepository implements IMessageRepository {
 
     async findById(messageId: string): Promise<ChatMessage | null> {
         try {
-            const message = await PrivateMessage.findOne({ id: messageId });
+            const message = await PrivateMessage.findOne({id: messageId});
             return message ? this.mapToChatMessage(message) : null;
         } catch (error) {
             logger.error('Error finding message by ID:', error);
@@ -51,7 +52,7 @@ export class MessageRepository implements IMessageRepository {
 
     async findByRoomId(roomId: string, options: MessageQueryOptions = {}): Promise<ChatMessage[]> {
         try {
-            const query = PrivateMessage.find({ roomId });
+            const query = PrivateMessage.find({roomId});
             const messages = await this.applyQueryOptions(query, options);
             return messages.map((msg: IPrivateMessage) => this.mapToChatMessage(msg));
         } catch (error) {
@@ -64,8 +65,8 @@ export class MessageRepository implements IMessageRepository {
         try {
             const query = PrivateMessage.find({
                 $or: [
-                    { userAId, userBId },
-                    { userAId: userBId, userBId: userAId }
+                    {userAId, userBId},
+                    {userAId: userBId, userBId: userAId}
                 ]
             });
 
@@ -80,10 +81,13 @@ export class MessageRepository implements IMessageRepository {
     async findByUser(userId: string): Promise<ChatMessage[]> {
         try {
             const query = PrivateMessage.find({
-                roomId: { $regex: `${RoomPrefix.PRIVATE}*${userId}*`, $options: 'i' }
+                $or: [
+                    {roomId: {$regex: `^${RoomPrefix.PRIVATE}${userId}_`, $options: 'i'}},
+                    {roomId: {$regex: `^${RoomPrefix.PRIVATE}[^_]+_${userId}$`, $options: 'i'}}
+                ]
             });
 
-            const messages = await query.sort({ timestamp: -1 });
+            const messages = await query.sort({timestamp: -1});
             return messages.map((msg: IPrivateMessage) => this.mapToChatMessage(msg));
         } catch (error) {
             logger.error('Error finding messages by user ID:', error);
@@ -94,9 +98,9 @@ export class MessageRepository implements IMessageRepository {
     async update(messageId: string, update: Partial<ChatMessage>): Promise<ChatMessage | null> {
         try {
             const updatedMessage = await PrivateMessage.findOneAndUpdate(
-                { id: messageId },
-                { $set: update },
-                { new: true }
+                {id: messageId},
+                {$set: update},
+                {new: true}
             );
             return updatedMessage ? this.mapToChatMessage(updatedMessage) : null;
         } catch (error) {
@@ -107,7 +111,7 @@ export class MessageRepository implements IMessageRepository {
 
     async delete(messageId: string): Promise<boolean> {
         try {
-            const result = await PrivateMessage.deleteOne({ id: messageId });
+            const result = await PrivateMessage.deleteOne({id: messageId});
             return result.deletedCount > 0;
         } catch (error) {
             logger.error('Error deleting message:', error);
@@ -131,7 +135,7 @@ export class MessageRepository implements IMessageRepository {
         query: Query<IPrivateMessage[], IPrivateMessage>,
         options: MessageQueryOptions
     ): Query<IPrivateMessage[], IPrivateMessage> {
-        const { before, after, limit } = options;
+        const {before, after, limit} = options;
 
         if (before) {
             const beforeDate = new Date(before);

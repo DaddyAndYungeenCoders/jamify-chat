@@ -11,6 +11,7 @@ export interface Config {
         password: string;
     };
     ws: {
+        uri: string;
         messageChannel: string;
     };
     jwt: {

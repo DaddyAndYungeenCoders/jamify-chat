@@ -12,6 +12,7 @@ export const config: Config = {
         password: process.env.ACTIVEMQ_PASSWORD || 'admin',
     },
     ws: {
+        uri: process.env.WS_URI || 'https://jamify.daddyornot.xyz/jamify-ws/api',
         messageChannel: 'new-message',
     },
     jwt: {

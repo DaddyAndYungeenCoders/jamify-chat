@@ -87,7 +87,7 @@ export class MessageRepository implements IMessageRepository {
                 ]
             });
 
-            const messages = await query.sort({timestamp: -1});
+            const messages = await query.exec();
             return messages.map((msg: IPrivateMessage) => this.mapToChatMessage(msg));
         } catch (error) {
             logger.error('Error finding messages by user ID:', error);

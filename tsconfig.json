@@ -1,0 +1,27 @@
+{
+  "compilerOptions": {
+    "target": "ES6",
+    // Version JavaScript cible
+    "module": "commonjs",
+    // Type de module
+    "rootDir": "./src",
+    // Répertoire source
+    "outDir": "./dist",
+    // Répertoire de sortie
+    "strict": true,
+    // Active les vérifications strictes
+    "esModuleInterop": true,
+    // Permet l'importation des modules CommonJS
+    "skipLibCheck": true
+    // Ignore les vérifications des fichiers de déclaration
+  },
+  "include": [
+    "src/**/*"
+  ],
+  // Inclut tous les fichiers dans le répertoire src
+  "exclude": [
+    "./node_modules",
+    "dist"
+  ]
+  // Exclut le répertoire node_modules et dist
+}

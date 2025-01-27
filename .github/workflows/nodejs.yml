@@ -1,0 +1,75 @@
+name: Node.js CI
+
+on:
+  push:
+    branches:
+      - dev
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+
+      - name: Install dependencies
+        run: npm install
+
+  test:
+    runs-on: ubuntu-latest
+    needs: build
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Run tests
+        run: npm test
+
+  docker:
+    runs-on: ubuntu-latest
+    needs: test
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v2
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+      - name: Load environment variables
+        run: echo "APP_NAME=${{ secrets.APP_NAME || 'jamify-chat' }}" >> $GITHUB_ENV
+
+      - name: Build Docker image
+        run: |
+          SHORT_SHA=$(git rev-parse --short HEAD)
+          docker build -t ${{ secrets.DOCKER_USERNAME }}/${{ env.APP_NAME }}:latest -t ${{ secrets.DOCKER_USERNAME }}/${{ env.APP_NAME }}:$SHORT_SHA .
+
+      - name: Push Docker image to Docker Hub
+        run: |
+          SHORT_SHA=$(git rev-parse --short HEAD)
+          docker push ${{ secrets.DOCKER_USERNAME }}/${{ env.APP_NAME }}:latest
+          docker push ${{ secrets.DOCKER_USERNAME }}/${{ env.APP_NAME }}:$SHORT_SHA
